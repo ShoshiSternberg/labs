@@ -11,7 +11,7 @@ contract DEX {
 
     uint256 public _k;
 
-    mapping(address => uint256) investors;
+    mapping(address => uint256) public investors;
 
     address public owner;
 
@@ -92,7 +92,7 @@ contract DEX {
             "Amounts must be deposited in the correct ratio"
         );
         investors[msg.sender] += amountA + amountB;
-
+        console.log(investors[msg.sender]);
         A.transferFrom(msg.sender, address(this), amountA);
         B.transferFrom(msg.sender, address(this), amountB);
         _k = A.balanceOf(address(this)) * B.balanceOf(address(this));
@@ -102,7 +102,7 @@ contract DEX {
         uint256 Abalance = A.balanceOf(address(this));
         uint256 Bbalance = B.balanceOf(address(this));
         uint256 total = Bbalance + Abalance;
-        uint256 ratio = (total / investors[msg.sender]) * WAD;
+        uint256 ratio = (total *WAD/ investors[msg.sender]) ;
 
         uint256 maxB = (Bbalance * WAD) / ratio;
         uint256 maxA = (Abalance * WAD) / ratio;
@@ -112,7 +112,7 @@ contract DEX {
     function removeLiquidity(
         uint256 amountA,
         uint256 amountB
-    ) public payable returns (uint256, uint256) {
+    ) public payable returns (uint256, uint256,uint256) {
         require(investors[msg.sender] > 0, "you can't remove liquidity");
 
         (uint256 maxA, uint256 maxB) = getMaxLiquidityToRemove();
@@ -125,12 +125,14 @@ contract DEX {
 
         uint256 realAmountA = maxA > amountA ? amountA : maxA;
         uint256 realAmountB = maxB > amountB ? amountB : maxB;
+        A.approve(address(this),realAmountA);
+        B.approve(address(this),realAmountB);
         A.transferFrom(address(this), msg.sender, realAmountA);
         B.transferFrom(address(this), msg.sender, realAmountB);
 
         investors[msg.sender] -= (realAmountA + realAmountB);
         _k = A.balanceOf(address(this)) * B.balanceOf(address(this));
 
-        return (realAmountA, realAmountB);
+        return (realAmountA, realAmountB,investors[msg.sender]);
     }
 }

@@ -43,7 +43,66 @@ contract DEXTest{
     console.log(myDEX.calculateAForBTrade(2000));
     myDEX.tradeBtoA(2000);
     (a ,b)= myDEX.getBalances();
-    console.log("a ",a,"b ",b);
+    console.log("a ",a,"b ",b); 
+///addLiquidity
+    uint256 x=5000;
+    console.log("-----");
+    console.log("a ",a,"b ",b);  
+    uint256 amountB=myDEX.priceA(x);
+    A.approve(address(myDEX),x);
+    B.approve(address(myDEX),amountB);
+    console.log("a", x, "B",amountB);
+
+    myDEX.addLiquidity(x,amountB);
+    
+    (uint256 aa ,uint256 bb)= myDEX.getBalances();
+    console.log("a ",aa,"b ",bb);  
+    console.log("b ",amountB,"    " ,b*WAD/a*x/WAD);   
+    
+    console.log(myDEX.investors(address(this)));
+
+    B.approve(address(myDEX),2000);
+    myDEX.tradeBtoA(2000);
+    (a ,b)= myDEX.getBalances();
+    console.log("a ",a,"b ",b );  
+
+//removeLiquidity
+    (uint256 maxA, uint256 maxB)=myDEX.getMaxLiquidityToRemove();
+    console.log("max a  ", maxA, "max b  " ,maxB);
+    (uint256 reala, uint256 realb, uint256 balance)=myDEX.removeLiquidity(maxA,maxB);
+   
+    //console.log("realA  ", reala, "realb  ",realb,"user balance   ",balance); 
+    (a ,b)= myDEX.getBalances();
+    console.log("a balance",a,"b balance",b );  
+
+    
+
+
+
+    }
+
+//    function testAddLiquidity()public{
+//     uint256 x=5000;
+//     console.log("-----");
+//     (uint256 a, uint256 b)=myDEX.getBalances();
+//     console.log("a ",a,"b ",b);  
+//     uint256 amountB=myDEX.priceA(x);
+//     A.approve(address(myDEX),x);
+//     B.approve(address(myDEX),amountB);
+//     console.log("a", x, "B",amountB);
+
+//     myDEX.addLiquidity(x,amountB);
+    
+//     (uint256 aa ,uint256 bb)= myDEX.getBalances();
+//     console.log("a ",a,"b ",b);  
+//     console.log("b ",amountB,"    " ,b/a*WAD*x/WAD);
+
+//     //assertEq(amountB,a/b*WAD/x*WAD,"false");
+
+//    }
+
+   function removeLiquidity()public{
+    
 
    }
    
