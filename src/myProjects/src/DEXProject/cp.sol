@@ -42,7 +42,7 @@ contract CP {
         if (reserve0 == 0 && reserve1 == 0)
             reserve0 = token0.balanceOf(address(this));
         reserve1 = token1.balanceOf(address(this));
-
+        
         bool isToken0 = addIn == address(token0);
         (
             IERC20 tokenIn, //USDC
@@ -74,7 +74,7 @@ contract CP {
         token1.transferFrom(msg.sender, address(this), amount1);
         console.log("reserve0 ",token0.balanceOf(address(this)));
         console.log("reserve1 ",token1.balanceOf(address(this)));
-
+        console.log("amount0 ",amount0, "amount1 ",amount1);
         if (reserve0 > 0 || reserve1 > 0)
             require(reserve0 * amount1 == reserve1 * amount0, "x/y != dx/dy");
 
