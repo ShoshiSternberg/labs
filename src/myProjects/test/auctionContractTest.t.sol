@@ -13,11 +13,20 @@ contract AuctionTest is Test{
     function setUp()public{
 
         auctions=new AuctionContract();
-
     }
 
-    function testStartAuction()public {
+    function testStartAuction()public returns(uint){
         MockERC721 token=new MockERC721();
-        auctions.startAuction(address(token),block.timestamp+24,1);
+        //to set the token in address(this) balance
+        uint auctionId=auctions.startAuction(address(token),block.timestamp+24,1);
+        return auctionId;
+    }
+
+    function testAddBid()public{
+        uint auctionId=testStartAuction();
+        vm.startPrank(address(1));
+        vm.deal(address(1),100 ether);
+        //to put value in msg.value
+        auctions.addBid(auctionId);
     }
 }
