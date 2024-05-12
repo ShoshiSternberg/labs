@@ -13,8 +13,10 @@ contract AuctionTest is Test {
 
     function setUp() public {
         token = new MyERC721("myNFT", "MYNFT");
-        auctions = new AuctionContract(address(token));
+        auctions = new AuctionContract();
     }
+
+    receive() external payable {}
 
     function testStartAuction() public returns (uint) {
         //to set the token in address(this) balance
@@ -25,6 +27,7 @@ contract AuctionTest is Test {
         uint auctionId = auctions.startAuction{value: 10}(
             //address(token),
             block.timestamp + 24,
+            address(token),
             tokenid
         );
 
@@ -39,12 +42,10 @@ contract AuctionTest is Test {
         return auctionId;
     }
 
-    receive() external payable {}
 
     function testplaceBid() public {
         //start auction
-        uint auctionId = testStartAuction();
-        
+        uint auctionId = testStartAuction();        
 
         //place bid 1
         vm.startPrank(address(4));
@@ -61,6 +62,7 @@ contract AuctionTest is Test {
         //end auction
         vm.warp(300);
         uint sellerBalance = auctions.getAuction(auctionId).seller.balance;
+
         auctions.auctionEnds(auctionId);
         assertEq(
             auctions.getAuction(auctionId).seller.balance -
@@ -68,7 +70,7 @@ contract AuctionTest is Test {
             "the seller should get the highest bid to his wallet"
         );
 
-        
+        assertEq(address(5),token.ownerOf(1),"the ownership of the token transfered from the contract to the highest bidder");
         console.log(token.ownerOf(1));
         vm.stopPrank();
     }

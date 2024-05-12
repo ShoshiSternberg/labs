@@ -8,6 +8,7 @@ import {IERC721} from "forge-std/interfaces/IERC721.sol";
 contract AuctionContract {
     struct Auction {
         address seller;
+        IERC721 nft;
         uint tokenId;
         uint endAt;
         bool started;
@@ -27,7 +28,7 @@ contract AuctionContract {
 
     uint public auctionCounter = 0;
 
-    IERC721 public nft;
+    
 
     modifier OnlySeller(uint auctionId) {
         require(auctions[auctionId].seller == msg.sender);
@@ -45,21 +46,23 @@ contract AuctionContract {
         auctions[auctionId].endAt = newDate;
     }
 
-    constructor(address _nftContract) {
-        nft = IERC721(_nftContract);
+    constructor() {
+        
     }
 
     function startAuction(
         uint endAt,
+        address nft,
         uint tokenId
     ) public payable returns (uint) {
         auctions[auctionCounter].seller = msg.sender;
+        auctions[auctionCounter].nft=IERC721(nft);
         auctions[auctionCounter].tokenId = tokenId;
         auctions[auctionCounter].endAt = endAt;
         auctions[auctionCounter].started = true;
 
-        require(nft.ownerOf(tokenId) == msg.sender, "Not token owner");
-        nft.transferFrom(msg.sender, address(this), tokenId);
+        require((auctions[auctionCounter].nft).ownerOf(tokenId) == msg.sender, "Not token owner");
+        auctions[auctionCounter].nft.transferFrom(msg.sender, address(this), tokenId);
         placeBid(auctionCounter);
 
         emit startAuctionEvent(msg.sender, auctionCounter);
@@ -95,20 +98,21 @@ contract AuctionContract {
             "The end date of the auction has not yet ended"
         );
         require(auctions[auctionId].started, "The auction is already closed");
+        
         //transfer the nft's to the highest bidder
-        nft.approve(address(this), auctions[auctionId].tokenId);
-        nft.transferFrom(
+        
+        auctions[auctionId].nft.transferFrom(
             address(this),
             auctions[auctionId].highestBidder,
             auctions[auctionId].tokenId
         );
-
+        console.log(1);
         //transfer the payment of the highest bidder to the seller
         payable(auctions[auctionId].seller).transfer(
             auctions[auctionId].highestBid
         );
         auctions[auctionId].started = false;
-        
+
         emit endAuctionEvent(
             auctionId,
             auctions[auctionId].highestBidder,
