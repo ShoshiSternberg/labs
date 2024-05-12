@@ -5,98 +5,118 @@ import "forge-std/console.sol";
 import "forge-std/Test.sol";
 import {IERC721} from "forge-std/interfaces/IERC721.sol";
 
-contract AuctionContract{
-
+contract AuctionContract {
     struct Auction {
-        
         address seller;
-        IERC721 NFT;
         uint tokenId;
         uint endAt;
-        bool started;        
-        mapping(address=>uint) bids;
-        address [] biddersAddresses;
+        bool started;
         address highestBidder;
-    } 
+        uint highestBid;
+    }
 
+    /*╔═════════════════════════════╗
+      ║           EVENTS            ║
+      ╚═════════════════════════════╝*/
     event withdrawBidEvent(address, uint);
     event addBidEvent(address, uint);
     event startAuctionEvent(address, uint);
-    event endAuctionEvent(uint,address, uint);
+    event endAuctionEvent(uint, address, uint);
 
+    mapping(uint => Auction) public auctions;
 
-    mapping(uint=>Auction) public auctions;
+    uint public auctionCounter = 0;
 
-    uint public auctionCounter=0;
+    IERC721 public nft;
 
-    modifier OnlySeller(uint auctionId){
-        require(auctions[auctionId].seller==msg.sender);
+    modifier OnlySeller(uint auctionId) {
+        require(auctions[auctionId].seller == msg.sender);
         _;
-    }   
-
-    function setEndAt(uint auctionId,uint newDate) public OnlySeller(auctionId){
-        require(auctions[auctionId].endAt<newDate,"you can't short the auction time");
-        auctions[auctionId].endAt=newDate;
     }
 
-    function startAuction(address nft, uint endAt,uint tokenId) public returns(uint){
-        
-        auctions[auctionCounter].seller=msg.sender;
-        auctions[auctionCounter].NFT=IERC721(nft);
-        auctions[auctionCounter].tokenId=tokenId;
-        auctions[auctionCounter].endAt=endAt;
-        auctions[auctionCounter].started=true;
+    function setEndAt(
+        uint auctionId,
+        uint newDate
+    ) public OnlySeller(auctionId) {
+        require(
+            auctions[auctionId].endAt < newDate,
+            "you can't short the auction time"
+        );
+        auctions[auctionId].endAt = newDate;
+    }
 
-        auctions[auctionCounter].NFT.transferFrom(msg.sender,address(this),tokenId);
-        addBid(auctionCounter);
+    constructor(address _nftContract) {
+        nft = IERC721(_nftContract);
+    }
 
-        emit startAuctionEvent(msg.sender,auctionCounter);
+    function startAuction(
+        uint endAt,
+        uint tokenId
+    ) public payable returns (uint) {
+        auctions[auctionCounter].seller = msg.sender;
+        auctions[auctionCounter].tokenId = tokenId;
+        auctions[auctionCounter].endAt = endAt;
+        auctions[auctionCounter].started = true;
+
+        require(nft.ownerOf(tokenId) == msg.sender, "Not token owner");
+        nft.transferFrom(msg.sender, address(this), tokenId);
+        placeBid(auctionCounter);
+
+        emit startAuctionEvent(msg.sender, auctionCounter);
         return auctionCounter++;
     }
-    
-    
-    function addBid(uint auctionId) public payable {
-        require(auctions[auctionId].started,"this auction is not active");
-        require(auctions[auctionId].endAt>block.timestamp,"this auction is no longer active, time is over");
-        require(msg.value>0&&msg.value>(auctions[auctionId]).bids[ (auctions[auctionId]).highestBidder],"your bid is too less");
-        if(auctions[auctionId].bids[msg.sender]>0)
-            withdrawBid(auctionId);
-        auctions[auctionId].bids[msg.sender]=msg.value;
-        (auctions[auctionId].biddersAddresses).push(msg.sender);
-        auctions[auctionId].highestBidder=msg.sender;  
 
-        emit addBidEvent(msg.sender,msg.value);      
+    function placeBid(uint auctionId) public payable {
+        require(auctions[auctionId].started, "this auction is not active");
+        require(
+            auctions[auctionId].endAt > block.timestamp,
+            "this auction is no longer active, time is over"
+        );
+        require(
+            msg.value > 0 && msg.value > (auctions[auctionId]).highestBid,
+            "your bid is too less"
+        );
 
-    }
+        //transfer the previous bidder his funds
+        payable(auctions[auctionId].highestBidder).transfer(
+            auctions[auctionId].highestBid
+        );
 
-    function withdrawBid(uint auctionId) payable public {
-        require(msg.sender!=auctions[auctionId].highestBidder,"the highest bidder can't withdraw his bid");
-        uint withdrawAmount=auctions[auctionId].bids[msg.sender];
-        payable(msg.sender).transfer(auctions[auctionId].bids[msg.sender]);
-        auctions[auctionId].bids[msg.sender]=0;
-        emit withdrawBidEvent(msg.sender,withdrawAmount);        
+        //add the new higher bidder details
+        auctions[auctionId].highestBid = msg.value;
+        auctions[auctionId].highestBidder = msg.sender;
+
+        emit addBidEvent(msg.sender, msg.value);
     }
 
     function auctionEnds(uint auctionId) public {
-        require(block.timestamp>auctions[auctionId].endAt,"The end date of the auction has not yet ended");
-        for(uint i=((auctions[auctionId].biddersAddresses).length)-1;i>0;i--){
-            payable(auctions[auctionId].biddersAddresses[i]).transfer(auctions[auctionId].bids[auctions[auctionId].biddersAddresses[i]]);
-            auctions[auctionId].bids[auctions[auctionId].biddersAddresses[i]]=0;
-            auctions[auctionId].biddersAddresses.pop();
+        require(
+            block.timestamp > auctions[auctionId].endAt,
+            "The end date of the auction has not yet ended"
+        );
+        require(auctions[auctionId].started, "The auction is already closed");
+        //transfer the nft's to the highest bidder
+        nft.approve(address(this), auctions[auctionId].tokenId);
+        nft.transferFrom(
+            address(this),
+            auctions[auctionId].highestBidder,
+            auctions[auctionId].tokenId
+        );
 
-        }
-        auctions[auctionId].NFT.approve(address(this),auctions[auctionId].tokenId);
-        auctions[auctionId].NFT.transferFrom(address(this),auctions[auctionId].highestBidder,auctions[auctionId].tokenId);
-        payable(auctions[auctionId].seller).transfer(auctions[auctionId].bids[auctions[auctionId].highestBidder]);
-
-        emit endAuctionEvent(auctionId,auctions[auctionId].highestBidder,auctions[auctionId].bids[auctions[auctionId].highestBidder]);
-
-
+        //transfer the payment of the highest bidder to the seller
+        payable(auctions[auctionId].seller).transfer(
+            auctions[auctionId].highestBid
+        );
+        auctions[auctionId].started = false;
+        
+        emit endAuctionEvent(
+            auctionId,
+            auctions[auctionId].highestBidder,
+            auctions[auctionId].highestBid
+        );
     }
 
-
-    
-
-
-
+    function getAuction(uint auctionId) public view returns (Auction memory) {
+        return auctions[auctionId];
+    }
 }
