@@ -13,3 +13,12 @@
 [submodule "uniswap/lib/forge-std"]
 	path = uniswap/lib/forge-std
 	url = https://github.com/foundry-rs/forge-std
+[submodule "uniswap/contracts/v2-core"]
+	path = uniswap/contracts/v2-core
+	url = https://github.com/Uniswap/v2-core.git
+[submodule "uniswap/contracts/v2-periphery"]
+	path = uniswap/contracts/v2-periphery
+	url = https://github.com/Uniswap/v2-periphery.git
+[submodule "uniswap/lib/uniswap-lib"]
+	path = uniswap/lib/uniswap-lib
+	url = https://github.com/Uniswap/uniswap-lib
