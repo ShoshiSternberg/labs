@@ -5,6 +5,7 @@ import "forge-std/console.sol";
 import "forge-std/Test.sol";
 import {IERC20} from "forge-std/interfaces/IERC20.sol";
 import {BondToken} from "./bondToken.sol";
+import "../../lib/foundry-chainlink-toolkit/src/interfaces/feeds/AggregatorV2V3Interface.sol";
 
 
 
@@ -35,14 +36,17 @@ contract LendingProject{
 
     event Deposit(address,uint);
     event Withdraw(address,uint);
-
+    event LogPrice(int256);
+    AggregatorV3Interface internal priceFeed;
 
     constructor(){
         owner=msg.sender;        
         DAI=IERC20(0x6B175474E89094C44Da98b954EedeAC495271d0F);
         bondToken=new BondToken();    
-
+   
         priceFeed = AggregatorV3Interface(0x773616E4d11A78F511299002da57A0a94577F1f4);
+        int256 x=getEthToDaiPrice();
+         emit LogPrice(x);
     }  
     
 
@@ -58,7 +62,7 @@ contract LendingProject{
     }
 
     function deposit(uint amount) public payable {
-        if(lenders[msg.sender]==0)
+        if(lenders[msg.sender].amount==0)
             lendersAddresses.push(msg.sender);
         lenders[msg.sender].amount+=amount;
         //deposit amount from token 
@@ -82,7 +86,7 @@ contract LendingProject{
         if(msg.value>0)
             addCollateral();
 
-        uint DAIByUSDC=address(uniswap).getPrice(borrowAmount);
+        int256 DAIByUSDC=getLatestPrice();//address(uniswap).getPrice(borrowAmount);
         uint borrowLimit= percentage(borrowers[msg.sender].collateral, maxLTV)-borrowers[msg.sender].borrow;
         require(borrowAmount<=borrowLimit,"You didn't put enough collateral");
 
@@ -102,15 +106,15 @@ contract LendingProject{
 
     }
 
-    function triggerLiquidation()public OnlyOwner{
+    function triggerLiquidation()public onlyOwner{
 
     }
 
-    function harvestRewards()public OnlyOwner{
+    function harvestRewards()public onlyOwner{
 
     }
 
-    function convertTreasury ()public OnlyOwner{
+    function convertTreasury ()public onlyOwner{
 
     }
 
@@ -122,7 +126,17 @@ contract LendingProject{
         borrowers[msg.sender].collateral+=msg.value;
     }
 
-
-
-
+ function getLatestPrice() public view returns (int256) {
+        (
+            uint80 roundID,
+            int256 price,
+            uint256 startedAt,
+            uint256 timeStamp,
+            uint80 answeredInRound
+        ) = priceFeed.latestRoundData();
+        // for ETH / USD price is scaled up by 10 ** 8
+        return price / 1e8;
+    }
 }
+
+
