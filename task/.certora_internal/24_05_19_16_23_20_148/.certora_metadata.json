@@ -1,0 +1,32 @@
+{
+    "CLI_version": "7.6.3",
+    "branch": "master",
+    "certora_ci_client": null,
+    "conf": {
+        "debug": true,
+        "files": [
+            "Empty.sol"
+        ],
+        "process": "emv",
+        "rule": [
+            "sistersBirthMonths"
+        ],
+        "verify": "Empty:sisters.spec"
+    },
+    "conf_path": null,
+    "cwd_relative": "task",
+    "dirty": true,
+    "main_spec": "sisters.spec",
+    "origin": "git@github.com:ShoshiSternberg/labs.git",
+    "raw_args": [
+        "/home/user/.local/bin/certoraRun",
+        "Empty.sol",
+        "--verify",
+        "Empty:sisters.spec",
+        "--rule",
+        "sistersBirthMonths",
+        "--debug"
+    ],
+    "revision": "5a24bee5b4437120aaf300aae1460c89151b682d",
+    "timestamp": "1716114200.755527"
+}
