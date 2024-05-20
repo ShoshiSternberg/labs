@@ -1,0 +1,8 @@
+{
+    "importFilesToOrigRelpaths": {},
+    "primary_contract": "Empty",
+    "specfile": "sisters.spec",
+    "specfileOrigRelpath": "sisters.spec",
+    "specfilesToImportDecls": {},
+    "type": "spec"
+}

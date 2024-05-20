@@ -1,0 +1,40 @@
+Saving last configuration file to .certora_internal/24_05_20_10_11_52_084/run.conf
+There is no TAC file. Going to script EVMVerifier/certoraBuild.py to main_with_args()
+Creating dir /home/user/new_labs/labs/task/.certora_internal/24_05_20_10_11_52_084/.certora_config
+In /home/user/new_labs/labs/task/sisters.spec, found the imports: []
+copying spec file /home/user/new_labs/labs/task/sisters.spec to /home/user/new_labs/labs/task/.certora_internal/24_05_20_10_11_52_084/.certora_sources/.0_sisters.spec.spec
+writing /home/user/new_labs/labs/task/.certora_internal/24_05_20_10_11_52_084/.certora_verify.json
+Path to typechecker is /home/user/new_labs/labs/certora-beta/lib/python3.10/site-packages/certora_jars/Typechecker.jar
+running ['java', '-jar', '/home/user/new_labs/labs/certora-beta/lib/python3.10/site-packages/certora_jars/Typechecker.jar', '-buildDirectory', '/home/user/new_labs/labs/task/.certora_internal/24_05_20_10_11_52_084']
+
+building file Empty.sol
+Running cmd solc --version
+stdout, stderr = .certora_internal/24_05_20_10_11_52_084/.certora_config/version_check_solc.stdout, .certora_internal/24_05_20_10_11_52_084/.certora_config/version_check_solc.stderr
+Exitcode 0
+Solc run solc --version time: 0.0515
+Running cmd solc -o ".certora_internal/24_05_20_10_11_52_084/.certora_config/Empty.sol_0/" --overwrite --allow-paths ".",. --standard-json
+stdout, stderr = .certora_internal/24_05_20_10_11_52_084/.certora_config/Empty.sol_0.standard.json.stdout, .certora_internal/24_05_20_10_11_52_084/.certora_config/Empty.sol_0.standard.json.stderr
+Exitcode 0
+Solc run solc -o ".certora_internal/24_05_20_10_11_52_084/.certora_config/Empty.sol_0/" --overwrite --allow-paths ".",. --standard-json time: 0.0512
+reading standard json data from .certora_internal/24_05_20_10_11_52_084/.certora_config/Empty.sol_0.standard.json.stdout
+collecting worklist for /home/user/new_labs/labs/task/Empty.sol
+Processing dependencies from file /home/user/new_labs/labs/task/Empty.sol
+build failed
+Failure traceback: 
+Traceback (most recent call last):
+  File "/home/user/new_labs/labs/certora-beta/lib/python3.10/site-packages/certora_cli/certoraRun.py", line 145, in run_certora
+    build(context, ignore_spec_syntax_check=is_library)
+  File "/home/user/new_labs/labs/certora-beta/lib/python3.10/site-packages/certora_cli/EVMVerifier/certoraBuild.py", line 3600, in build
+    raise e
+  File "/home/user/new_labs/labs/certora-beta/lib/python3.10/site-packages/certora_cli/EVMVerifier/certoraBuild.py", line 3567, in build
+    cache_hit, build_cache_enabled, cached_files = build_from_cache_or_scratch(context,
+  File "/home/user/new_labs/labs/certora-beta/lib/python3.10/site-packages/certora_cli/EVMVerifier/certoraBuild.py", line 3499, in build_from_cache_or_scratch
+    cached_files = build_from_scratch(certora_build_generator,
+  File "/home/user/new_labs/labs/certora-beta/lib/python3.10/site-packages/certora_cli/EVMVerifier/certoraBuild.py", line 3432, in build_from_scratch
+    certora_build_generator.build(certora_verify_generator)
+  File "/home/user/new_labs/labs/certora-beta/lib/python3.10/site-packages/certora_cli/EVMVerifier/certoraBuild.py", line 2700, in build
+    sdc_pre_finders = self.collect_for_file(build_arg_contract_file, i, compiler_lang, Path(os.getcwd()),
+  File "/home/user/new_labs/labs/certora-beta/lib/python3.10/site-packages/certora_cli/EVMVerifier/certoraBuild.py", line 1971, in collect_for_file
+    build_logger.debug(f"available keys: {data['contracts'].keys()}")
+KeyError: 'contracts'
+Encountered an error running Certora Prover, please contact Certora
