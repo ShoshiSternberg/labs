@@ -131,7 +131,9 @@ contract LendingProject {
                  uint ETHByUSDC = borrowers[borrowersAddresses[i]].collateral * getEthToDaiPrice(); //getLatestPrice();
                  if(((borrowers[msg.sender].borrow>0)&& (borrowers[msg.sender].borrow * WAD) /(((ETHByUSDC) * WAD) / 100) > _liquidationThreshold)){
                     harvestRewards( borrowers[borrowersAddresses[i]].collateral- percentage(borrowers[borrowersAddresses[i]].collateral,_liquidationThreshold));
+                    //uniswap.swap(address(DAI),borrowers[borrowersAddresses[i]].collateral); in the liquidation we swap in uniswap to dai
                     borrowers[borrowersAddresses[i]].collateral=0;
+                    
                  }                     
         }
     }
