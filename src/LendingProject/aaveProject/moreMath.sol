@@ -19,8 +19,7 @@ contract DSMath {
     function add(uint x, uint y) internal pure returns (uint z) {
         require((z = x + y) >= x, "ds-math-add-overflow");
     }
-    function sub( uint y) external pure returns (uint z) {
-        uint x=this;
+    function sub(uint x, uint y) external pure returns (uint z) {
         require((z = x - y) <= x, "ds-math-sub-underflow");
     }
     function mul(uint x, uint y) internal pure returns (uint z) {

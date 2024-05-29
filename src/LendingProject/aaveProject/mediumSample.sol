@@ -5,11 +5,12 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@chainlink/contracts/v0.8/interfaces/AggregatorV3Interface.sol";
-import "@openzeppelin/contracts/utils/math/Math.sol";
+//import "@openzeppelin/contracts/utils/math/Math.sol";
 
 import "./interfaces/ISwapRouter.sol";
 import "./InnerMath.sol";
 import "./moreMath.sol";
+import "../bondToken.sol";
 
 interface ILendingPool {
     function deposit(
@@ -44,8 +45,8 @@ interface IUniswapRouter is ISwapRouter {
     function refundETH() external payable;
 }
 
-contract BondToken is ERC20Burnable, Ownable, InnerMath {
-    using Math for uint256;
+contract LendingProtocol is  Ownable, InnerMath {
+     using Math for uint256;
 
     uint256 public totalBorrowed;
     uint256 public totalReserve;
@@ -57,40 +58,45 @@ contract BondToken is ERC20Burnable, Ownable, InnerMath {
     uint256 public fixedAnnuBorrowRate = 300000000000000000;
 
     ILendingPool public constant aave =
-        ILendingPool(0xE0fBa4Fc209b4948668006B2bE61711b7f465bAe);
+        ILendingPool(0x56Ab717d882F7A8d4a3C2b191707322c5Cc70db8);//lendingPool
     IWETHGateway public constant wethGateway =
-        IWETHGateway(0xA61ca04DF33B72b235a8A28CfB535bb7A5271B70);
+        IWETHGateway(0xd5B55D3Ed89FDa19124ceB5baB620328287b915d);//according to GPT
     IERC20 public constant dai =
-        IERC20(0xFf795577d9AC8bD7D90Ee22b6C1703490b6512FD);
+        IERC20(0x77FDe93fEe5fe272dC17d799cb61447431E6Eba2);//dai
     IERC20 public constant aDai =
-        IERC20(0xdCf0aF9e59C002FA3AA091a46196b37530FD48a8);
+        IERC20(0x2B101eFBB4dFf1fbB8f87f02C560Fb8AC773aFC5);//aave fantom dai
     IERC20 public constant aWeth =
-        IERC20(0x87b1f4cf9BD63f7BBD3eE1aD04E8F52540349347);
+        IERC20(0x0e426e6e6B226D8bd566e417b90411Dcf14DF861);//aave fantom weth
     AggregatorV3Interface internal constant priceFeed =
         AggregatorV3Interface(0x9326BFA02ADD2366b30bacB125260Af641031331);
     IUniswapRouter public constant uniswapRouter =
         IUniswapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
     IERC20 private constant weth =
-        IERC20(0xd0A1E359811322d97991E03f863a0C30C2cF029C);
+        IERC20(0xc8c0Cf9436F4862a8F60Ce680Ca5a9f0f99b5ded);//weth
+
+    BondToken public bondToken;
 
     mapping(address => uint256) private usersCollateral;
     mapping(address => uint256) private usersBorrowed;
 
-    constructor() ERC20("Bond DAI", "bDAI") {}
+    constructor(address initialOwner) Ownable(initialOwner){
+        
+        bondToken=new BondToken();
+    }
 
     function bondAsset(uint256 _amount) external {
         dai.transferFrom(msg.sender, address(this), _amount);
-        totalDeposit += _amount;
         _sendDaiToAave(_amount);
         uint256 bondsToMint = InnerMath.getExp(_amount, getExchangeRate());
-        _mint(msg.sender, bondsToMint);
+        totalDeposit += _amount;
+        bondToken.mint(msg.sender, bondsToMint);
     }
 
     function unbondAsset(uint256 _amount) external {
-        require(_amount <= balanceOf(msg.sender), "Not enough bonds!");
+        require(_amount <= bondToken.balanceOf(msg.sender), "Not enough bonds!");
         uint256 daiToReceive = InnerMath.mulExp(_amount, getExchangeRate());
         totalDeposit -= daiToReceive;
-        burn(_amount);
+        bondToken.burn(msg.sender,_amount);
         _withdrawDaiFromAave(daiToReceive);
     }
 
@@ -106,7 +112,8 @@ contract BondToken is ERC20Burnable, Ownable, InnerMath {
         uint256 collateral = usersCollateral[msg.sender];
         require(collateral > 0, "Dont have any collateral");
         uint256 borrowed = usersBorrowed[msg.sender];
-        uint256 amountLeft = (InnerMath.mulExp(collateral, wethPrice)).sub(uint(borrowed));
+        uint256 collateralInUSDC=InnerMath.mulExp(collateral, wethPrice);
+        (bool status,uint256 amountLeft ) = collateralInUSDC.trySub(borrowed);
         uint256 amountToRemove = InnerMath.mulExp(_amount, wethPrice);
         require(amountToRemove < amountLeft, "Not enough collateral to remove");
         usersCollateral[msg.sender] -= _amount;
@@ -139,7 +146,7 @@ contract BondToken is ERC20Burnable, Ownable, InnerMath {
     {
         uint256 borrowRate = _borrowRate();
         uint256 fee = InnerMath.mulExp(_amount, borrowRate);
-        uint256 paid = _amount.sub(fee);
+        (bool status,uint256 paid) = _amount.trySub(fee);
         return (fee, paid);
     }
 
@@ -159,22 +166,29 @@ contract BondToken is ERC20Burnable, Ownable, InnerMath {
     }
 
     function getExchangeRate() public view returns (uint256) {
-        if (totalSupply() == 0) {
+        if (bondToken.totalSupply() == 0) {
             return 1000000000000000000;
         }
         uint256 cash = getCash();
-        uint256 num = cash.add(totalBorrowed).add(totalReserve);
-        return InnerMath.getExp(num, totalSupply());
+        (bool status,uint256 num) = cash.tryAdd(totalBorrowed);
+        if(status)
+        (status, num) = num.tryAdd(totalReserve);
+        return InnerMath.getExp(num, bondToken.totalSupply());
     }
 
     function getCash() public view returns (uint256) {
-        return totalDeposit.sub(totalBorrowed);
+        (bool status,uint256 result)= totalDeposit.trySub(totalBorrowed);
+        if(status)
+          return result;
+        else
+          return 0;
     }
 
     function harvestRewards() external onlyOwner {
         uint256 aWethBalance = aWeth.balanceOf(address(this));
         if (aWethBalance > totalCollateral) {
-            uint256 rewards = aWethBalance.sub(totalCollateral);
+            (bool status,uint256 rewards) = aWethBalance.trySub(totalCollateral);
+            if(status)
             _withdrawWethFromAave(rewards);
             ethTreasury += rewards;
         }
@@ -191,7 +205,7 @@ contract BondToken is ERC20Burnable, Ownable, InnerMath {
         require(amountLocked > 0, "No collateral found");
         uint256 amountBorrowed = usersBorrowed[msg.sender];
         uint256 wethPrice = uint256(_getLatestPrice());
-        uint256 amountLeft = InnerMath.mulExp(amountLocked, wethPrice).sub(
+        (bool status,uint256 amountLeft) = InnerMath.mulExp(amountLocked, wethPrice).trySub(
             amountBorrowed
         );
         return InnerMath.percentage(amountLeft, maxLTV);
@@ -238,7 +252,7 @@ contract BondToken is ERC20Burnable, Ownable, InnerMath {
 
     function _interestMultiplier() public view returns (uint256) {
         uint256 uRatio = _utilizationRatio();
-        uint256 num = fixedAnnuBorrowRate.sub(baseRate);
+        (bool status,uint256 num) = fixedAnnuBorrowRate.trySub(baseRate);
         return InnerMath.getExp(num, uRatio);
     }
 
@@ -246,7 +260,8 @@ contract BondToken is ERC20Burnable, Ownable, InnerMath {
         uint256 uRatio = _utilizationRatio();
         uint256 interestMul = _interestMultiplier();
         uint256 product = InnerMath.mulExp(uRatio, interestMul);
-        return product.add(baseRate);
+        (bool status, uint256 result)= product.tryAdd(baseRate);
+        return result;
     }
 
     function _depositRate() public view returns (uint256) {
