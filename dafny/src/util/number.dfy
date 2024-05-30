@@ -105,21 +105,22 @@ module Number {
   // verifier.
   function MaxUnsignedN(n:nat) : (r:nat)
     requires 1 <= n <= 32 {
-    match n
-    case 1 => MAX_U8
-    case 2 => MAX_U16
-    case 3 => MAX_U24
-    case 4 => MAX_U32
-    case 5 => MAX_U40
-    case 6 => MAX_U48
-    case 7 => MAX_U56
-    case 8 => MAX_U64
-    case 16 => MAX_U128
-    case 20 => MAX_U160
-    case 32 => MAX_U256
-    // Fall back case (for now)
-    case _ =>
-      Pow(2,n) - 1
+    match n{
+      case 1 => MAX_U8 as nat
+      case 2 => MAX_U16 as nat
+      case 3 => MAX_U24 as nat
+      case 4 => MAX_U32 as nat
+      case 5 => MAX_U40 as nat
+      case 6 => MAX_U48 as nat
+      case 7 => MAX_U56 as nat
+      case 8 => MAX_U64 as nat
+      case 16 => MAX_U128 as nat
+      case 20 => MAX_U160 as nat
+      case 32 => MAX_U256 as nat
+      // Fall back case (for now)
+      case _ =>
+        Pow(2,n) - 1
+    }
   }
 
 
@@ -454,17 +455,17 @@ module U256 {
   {
     if rhs >= 256 then 0
     else
-        var p := Pow(2,rhs as nat);
-        var n := (lhs as nat) * p;
-        (n % TWO_256) as u256
+      var p := Pow(2,rhs as nat);
+      var n := (lhs as nat) * p;
+      (n % TWO_256) as u256
   }
 
   function Shr(lhs: u256, rhs: u256) : u256 {
     if rhs >= 256 then 0
     else
-        var p := Pow(2, rhs as nat);
-        var n := (lhs as nat) / p;
-        n as u256
+      var p := Pow(2, rhs as nat);
+      var n := (lhs as nat) / p;
+      n as u256
   }
 
   /**
@@ -531,31 +532,31 @@ module U256 {
   }
 
   /**
-   * Sign extend a given value (v) using the most significant bit (msb) of its
-   * kth byte.  Consider this example for v:
-   *
-   *      23    16 15     8 7      0
-   *     +--------+--------+--------+
-   * ... |10111010|10010101|01000101|
-   *     +--------+--------+--------+
-   *
-   * Then, perfoming a sign extend with k=0 gives:
-   *
-   *      23    16 15     8 7      0
-   *     +--------+--------+--------+
-   * ... |00000000|00000000|01000101|
-   *     +--------+--------+--------+
-   *
-   * Since the msb of byte 0 is 0, everything above that is set to zero.  In
-   * contrast, performing a sign extend of our original input with k=1 gives:
-   *
-   *      23    16 15     8 7      0
-   *     +--------+--------+--------+
-   * ... |11111111|10010101|01000101|
-   *     +--------+--------+--------+
-   *
-   * Since, in this case, the msb of byte 1 is 1.
-   */
+    * Sign extend a given value (v) using the most significant bit (msb) of its
+    * kth byte.  Consider this example for v:
+    *
+    *      23    16 15     8 7      0
+    *     +--------+--------+--------+
+    * ... |10111010|10010101|01000101|
+    *     +--------+--------+--------+
+    *
+    * Then, perfoming a sign extend with k=0 gives:
+    *
+    *      23    16 15     8 7      0
+    *     +--------+--------+--------+
+    * ... |00000000|00000000|01000101|
+    *     +--------+--------+--------+
+    *
+    * Since the msb of byte 0 is 0, everything above that is set to zero.  In
+    * contrast, performing a sign extend of our original input with k=1 gives:
+    *
+    *      23    16 15     8 7      0
+    *     +--------+--------+--------+
+    * ... |11111111|10010101|01000101|
+    *     +--------+--------+--------+
+    *
+    * Since, in this case, the msb of byte 1 is 1.
+    */
   function SignExtend(v: u256, k: nat) : u256 {
     if k >= 31 then v
     else

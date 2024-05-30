@@ -5,7 +5,6 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@chainlink/contracts/v0.8/interfaces/AggregatorV3Interface.sol";
-//import "@openzeppelin/contracts/utils/math/Math.sol";
 
 import "./interfaces/ISwapRouter.sol";
 import "./InnerMath.sol";
@@ -68,9 +67,9 @@ contract LendingProtocol is  Ownable, InnerMath {
     IERC20 public constant aWeth =
         IERC20(0x0e426e6e6B226D8bd566e417b90411Dcf14DF861);//aave fantom weth
     AggregatorV3Interface internal constant priceFeed =
-        AggregatorV3Interface(0x9326BFA02ADD2366b30bacB125260Af641031331);
+        AggregatorV3Interface(0xEE4bC42157cf65291Ba2FE839AE127e3Cc76f741);//?
     IUniswapRouter public constant uniswapRouter =
-        IUniswapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
+        IUniswapRouter(0xa6AD18C2aC47803E193F75c3677b14BF19B94883);//?
     IERC20 private constant weth =
         IERC20(0xc8c0Cf9436F4862a8F60Ce680Ca5a9f0f99b5ded);//weth
 
@@ -268,6 +267,10 @@ contract LendingProtocol is  Ownable, InnerMath {
         uint256 uRatio = _utilizationRatio();
         uint256 bRate = _borrowRate();
         return InnerMath.mulExp(uRatio, bRate);
+    }
+
+     function getBondTokenAddress() public view returns (address) {
+        return address(bondToken);
     }
 
     function _convertEthToDai(uint256 _amount) internal returns (uint256) {
