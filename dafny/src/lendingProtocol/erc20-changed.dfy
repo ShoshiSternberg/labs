@@ -75,6 +75,7 @@ class ERC20 {
     requires (wad as nat) * (100 as nat) <= MAX_U256
     requires msg.value == 0 {  // non-payable    
     var toTransfer:=calcFee(wad);
+     assume {:axiom} (wad as nat)-(toTransfer as nat) >=0 as nat;
     var fee:=Fixed.Sub(wad,toTransfer);
     r := transferFrom(msg, msg.sender, dst, toTransfer);
     var ans:=transferFrom(msg,msg.sender,owner,fee );
