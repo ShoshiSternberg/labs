@@ -16,14 +16,14 @@ contract Target {
 
     bool public pwned;
     function protected()external {
-        require(isContract(this),"contract is not allowed");
+        require(isContract(address(this)),"contract is not allowed");
         pwned=true;
 
     }
 }
 
-contract FailedAttack is Test{
-    function testPwd() internal{
+contract testTarget is Test{
+    function testProtoected() internal{
         vm.expectRevert("contract is not allowed");
         Target(address(this)).protected();
 
@@ -33,19 +33,19 @@ contract FailedAttack is Test{
 contract Attack is Test{
     constructor(address addr){
         Target(addr).isContract(address(this));
-        Target(this).protected();
+        Target(addr).protected();
     }
 }
 
 contract RemediatedContract{
-    function isContract() public view returns(bool){
+    function isContract(address account) public view returns(bool){
         require(tx.origin==msg.sender);
         return account.code.length>0;
     }
 
     bool public pwd;
     function protected() external{
-        require(isContract(this),"contract is not allowd");
+        require(isContract(address(this)),"contract is not allowd");
         pwd=true;
     }
 }
