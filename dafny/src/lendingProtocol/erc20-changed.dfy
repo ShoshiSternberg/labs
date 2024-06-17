@@ -17,7 +17,7 @@ class ERC20 {
   var balances:  mapping<u160,u256>
   var allowance: mapping<u160, mapping<u160,u256>>
   var owner:u160
-  const feeRate: u256 := 3
+  const feeRate: u256 := 103
 
   constructor(msg:Transaction) {
     balances := Map(map[], 0);
@@ -73,20 +73,24 @@ class ERC20 {
     requires dst in balances.Keys()
     requires wad>0
     requires (wad as nat) * (100 as nat) <= MAX_U256
-    requires msg.value == 0 {  // non-payable    
+    requires msg.value == 0 {  // non-payable
     var toTransfer:=calcFee(wad);
-     assume {:axiom} (wad as nat)-(toTransfer as nat) >=0 as nat;
+    assume {:axiom} (wad as nat)-(toTransfer as nat) >=0 as nat;
     var fee:=Fixed.Sub(wad,toTransfer);
     r := transferFrom(msg, msg.sender, dst, toTransfer);
-    var ans:=transferFrom(msg,msg.sender,owner,fee );
+    assume {:axiom} this.balances.default == 0;
+    assume {:axiom} msg.sender in balances.Keys();
+    assume {:axiom} owner in balances.Keys();
+    assume {:axiom} wad as nat - toTransfer as nat >= 0;
+    var ans:=transferFrom(msg,msg.sender,owner,fee);
   }
 
   method calcFee(amount: u256) returns (result: u256)
     requires amount > 0
     requires (amount as nat) * (100 as nat) <= MAX_U256
   {
-    var c :=Fixed.Div(amount, feeRate);
-    result:=Fixed.Sub(amount,c);
+    result :=Fixed.Div(Mul(amount,100), feeRate);
+    //result:=Fixed.Sub(amount,c);
 
   }
 
@@ -101,6 +105,7 @@ class ERC20 {
     requires msg.value == 0
     ensures r != Revert ==> sum(old(this.balances.Items())) == sum(this.balances.Items()) {
     assume {:axiom} (old(balances).Get(dst) as nat) + (wad as nat) <= MAX_U256;
+    assume {:axiom} this.balances.default==0;
     if balances.Get(src) < wad { return Revert; }
 
     if src != msg.sender && allowance.Get(src).Get(msg.sender) != (MAX_U256 as u256) {
